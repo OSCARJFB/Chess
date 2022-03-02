@@ -2,7 +2,7 @@
 Chess game run in windows console.
 
 TO BE ADDED:
-- Rocked 
+- Rockad 
 - En passant
 - AI
 - Graphics
