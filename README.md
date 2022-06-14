@@ -8,11 +8,11 @@ DONE SO FAR:
 - castling
 - chess
 - chess mate
+- Graphics
 
 TO BE ADDED:
 - En passant
 - AI
-- Graphics
 
 KNOWN ISSUES:
-- Alot of garbage input may disrupt movement action. 
+- None but probably alot of issues. 
