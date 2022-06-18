@@ -1,5 +1,6 @@
 # Chess
-Chess game run in windows console.
+This is a chess game, status of development is in playable condition: game rules and graphics are in place. 
+Graphics are made possible to thanks to the awseome sdllib(simple direct media layer) https://www.libsdl.org/index.php.
 
 DONE SO FAR:
 - Movement
