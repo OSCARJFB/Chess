@@ -1,7 +1,7 @@
 /*
  * This is a chess game.
  * Author: Oscar Bergström.
- * Last edited: 2022-05-09. 
+ * Last edited: 2022-06-18. 
  */
 
 #include <iostream>
