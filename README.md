@@ -15,6 +15,9 @@ DONE SO FAR:
 TO BE ADDED:
 - En passant
 - AI
+- Code should be sorted into namespaces and classes.
 
 KNOWN ISSUES:
 - None but probably alot of issues :)
+
+
