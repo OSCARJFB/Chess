@@ -1,7 +1,7 @@
 /*
  * This is a chess game.
  * Author: Oscar Bergström.
- * Last edited: 2022-06-18. 
+ * Last edited: 2022-06-1BOARD_SIZE. 
  */
 
 #include <iostream>
@@ -14,22 +14,24 @@
 #define UNDEF 65    // Value used if nothing is selected.
 #define START_X 110 // Start of X value of the chess board. 
 #define START_Y	50	// Start of Y value of the chess board.
+#define BOARD_SIZE 8
 
 int main(int argc, char* argv[]);
-std::vector <char> checkMove(int, int, int, int, char[8][8]);
-bool moveAction(int, int, int, int, char[8][8], bool, char, char, std::vector <char>);
+std::vector <char> checkMove(int, int, int, int, char[BOARD_SIZE][BOARD_SIZE]);
+bool moveAction(int, int, int, int, char[BOARD_SIZE][BOARD_SIZE], bool, char, char, std::vector <char>);
 bool pawnRules(int, int, int, int, std::vector <char>, char, bool);
 bool rookRules(int, int, int, int, std::vector <char>, char, bool);
 bool knightRules(int, int, int, int, char, char, bool);
 bool bishopRules(int, int, int, int, std::vector <char>, char, bool);
 bool queenRules(int, int, int, int, std::vector <char>, char, bool);
 bool kingRules(int, int, int, int, std::vector <char>, char, bool); 
-bool is_check(char board[8][8], bool);
-bool lookForMove(char[8][8], int, int, int, int, char, bool, char);
-void castling(bool, char[8][8], bool*, bool*, bool*, bool*);
-void castlingAction(char[8][8], bool*, bool*, bool*, bool*, bool*, int, int, int, int, bool);
+bool is_check(char board[BOARD_SIZE][BOARD_SIZE], bool);
+bool lookForMove(char[BOARD_SIZE][BOARD_SIZE], int, int, int, int, char, bool, char);
+void castling(bool, char[BOARD_SIZE][BOARD_SIZE], bool*, bool*, bool*, bool*);
+void castlingAction(char[BOARD_SIZE][BOARD_SIZE], bool*, bool*, bool*, bool*, bool*, int, int, int, int, bool);
+void createSquares(SDL_Rect[BOARD_SIZE * BOARD_SIZE], const int, const int);
 void drawBackground(SDL_Renderer* rend_Board);
-void drawBoard(SDL_Renderer*, SDL_Rect[64], char[8][8], int, int, bool, int, int);
+void drawBoard(SDL_Renderer*, SDL_Rect[64], char[BOARD_SIZE][BOARD_SIZE], int, int, bool);
 void drawRook(SDL_Renderer*, int, int);
 void drawKnight(SDL_Renderer*, int, int);
 void drawBishop(SDL_Renderer*, int, int);
@@ -49,16 +51,12 @@ int main(int argc, char* argv[]) {
     int kingX = UNDEF, kingY = UNDEF;                                            // Stores the x and y position of the king.
     int hoovering = UNDEF, mouseX, mouseY, clicked = UNDEF, clickedMove = UNDEF; // Mouse interaction, such as hoovering, position and click. 
     int startX = START_X, startY = START_Y;                                      // Current X and Y location of the chess board squares. 
-    int rowSize = 0, k = 0, n = 0;                                               // Used for indexing and iteration purposes. 
-    int aiSel = UNDEF, aiMove = UNDEF;                                           // Will mark a move on the chess board. 
-
-    const int width = 50, height = 50; // Size of a square. 
 	
 	std::vector <char> movement; // Pattern of a move. 
 
     char piece = ' ', target = ' ', king = ' '; // Letter corresponding to a piece, target and king. 
      
-	char board[8][8] = { 'R', 'K', 'B', 'Q','W', 'B', 'K', 'R',                            
+	char board[BOARD_SIZE][BOARD_SIZE] = { 'R', 'K', 'B', 'Q','W', 'B', 'K', 'R',                            
 						 'P', 'P', 'P', 'P','P', 'P', 'P', 'P',                            
 						 ' ', ' ', ' ', ' ',' ', ' ', ' ', ' ',                            
 						 ' ', ' ', ' ', ' ',' ', ' ', ' ', ' ',                            
@@ -68,40 +66,26 @@ int main(int argc, char* argv[]) {
 						 'r', 'k', 'b', 'q','w', 'b', 'k', 'r' };                         
 
 
-	SDL_Window* chess_Board;         // Window variable. 
-	SDL_Renderer* rend_Board = NULL; // Renderer.
-	SDL_Rect rect_Board[64];         // Array of squares: Used when writing the chess board. 
-	SDL_Event event;                 // Event handler. 
-	Uint32 button;                   // Stores mouse and button values.
+    // Graphics variabels. 
+	SDL_Window* chess_Board;           // Window variable. 
+	SDL_Renderer* rend_Board = NULL;   // Renderer.
+	SDL_Rect rect_Board[64];           // Array of squares: Used when writing the chess board. 
+	SDL_Event event;                   // Event handler. 
+	Uint32 button;                     // Stores mouse and button values.
+    const int width = 50, height = 50; // Size of a square. 
 
-	for (int i = 0; i < 64; i++) { // Num of squares.
-		rowSize++;                 // Num of rows. 
-
-        // Size of the squares. 
-		rect_Board[i].x = startX;        
-		rect_Board[i].y = startY;
-		rect_Board[i].w = width;
-		rect_Board[i].h = height;
-
-		startX += width; // X starting point of the next square
-
-		if (rowSize == 8) {   // End of a row. 
-			rowSize = 0;      // Reset row size. 
-			startY += height; // Y starting point of the next square
-			startX = START_X; // Rest the X starting point.
-		}
-	}
-
-	// Create and add window / render settings. 
+    // Initgraphic, create and add window render settings. 
 	chess_Board = SDL_CreateWindow("OSCARJFB-Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 600, 500, SDL_WINDOW_RESIZABLE);
 	rend_Board = SDL_CreateRenderer(chess_Board, -1, SDL_RENDERER_ACCELERATED);
+
+    createSquares(rect_Board, width, height);
 
 	while (is_Running == true) {
         // Find the king corresponding to the current player turn. 
 		if (playerTurn == true) king = 'W';
 		else king = 'w';
-		for (int i = 0; i < 8; i++)
-			for (int n = 0; n < 8; n++)
+		for (int i = 0; i < BOARD_SIZE; i++)
+			for (int n = 0; n < BOARD_SIZE; n++)
 				if (board[i][n] == king) {
 					kingX = n;
 					kingY = i;
@@ -110,8 +94,8 @@ int main(int argc, char* argv[]) {
 		// Search for any threat to piece of type king. 
 		if (playerTurn == true) opponent = false;
 		else opponent = true;
-		for (int i = 0; i < 8; i++) {
-			for (int n = 0; n < 8; n++) {
+		for (int i = 0; i < BOARD_SIZE; i++) {
+			for (int n = 0; n < BOARD_SIZE; n++) {
 				if (board[i][n] != ' ') check = lookForMove(board, i, n, kingY, kingX, board[i][n], opponent, king);
 				if (check == true) break;
 			}
@@ -133,8 +117,8 @@ int main(int argc, char* argv[]) {
 
         // If a piece is selected get mouse state when hoovering.
         if (selected == true) {
-            k = 0; // Reset column.
-            n = 0; // Reset row. 
+            int k = 0; // Reset column.
+            int n = 0; // Reset row. 
 
             SDL_GetMouseState(&mouseX, &mouseY); // Current mouse position.
             piece = board[selectY][selectX];     // Store the letter corresponding to a selected piece. 
@@ -196,7 +180,7 @@ int main(int argc, char* argv[]) {
 
                 // Iteration of 2d array using a while loop.
                 n++; 
-                if (n == 8) {   // Row.
+                if (n == BOARD_SIZE) {   // Row.
                     n = 0;      // Reset.
                     k++;        // Column.
                 }
@@ -212,8 +196,8 @@ int main(int argc, char* argv[]) {
 				button = SDL_GetMouseState(&mouseX, &mouseY); // Get mouse position in event of a click(x, y), stored the clicked button. 
 				if (button == SDL_BUTTON(1)) {                // In case of button = left. 
 					
-                    k = 0; // Reset column.
-					n = 0; // Reset row. 
+                    int k = 0; // Reset column.
+					int n = 0; // Reset row. 
 
                     // Iterate over the game board. 
 					for (int i = 0; i < 64; i++) {
@@ -262,7 +246,7 @@ int main(int argc, char* argv[]) {
 
                         // Iteration of 2d array using a while loop.
 						n++;
-						if (n == 8) { // Row.
+						if (n == BOARD_SIZE) { // Row.
 							n = 0;    // Reset.
 							k++;      // Column.
 						}
@@ -278,7 +262,7 @@ int main(int argc, char* argv[]) {
 
         // Draw graphics. 
 		drawBackground(rend_Board);
-		drawBoard(rend_Board, rect_Board, board, clicked, hoovering, can_move, aiSel, aiMove);
+		drawBoard(rend_Board, rect_Board, board, clicked, hoovering, can_move);
 		SDL_RenderPresent(rend_Board);
 	}
 
@@ -293,7 +277,7 @@ int main(int argc, char* argv[]) {
 
 std::vector <char> checkMove(int selectY, int  selectX, 
                              int  moveY,  int  moveX, 
-                             char board[8][8]) {
+                             char board[BOARD_SIZE][BOARD_SIZE]) {
 
     int trackX = selectX; // Used when tracking the movement. 
 
@@ -356,7 +340,7 @@ std::vector <char> checkMove(int selectY, int  selectX,
 
 bool moveAction(int selectY,      int  selectX, 
                 int  moveY,       int  moveX, 
-                char board[8][8], bool playerTurn, 
+                char board[BOARD_SIZE][BOARD_SIZE], bool playerTurn, 
                 char target,      char piece, 
                 std::vector <char> movement) {
 
@@ -383,7 +367,7 @@ bool moveAction(int selectY,      int  selectX,
         validMove = kingRules(selectY, selectX, moveY, moveX, movement, piece, playerTurn);
 
     moved = board[moveY][moveX];        // Make move. 
-    selected = board[selectY][selectX]; // Will change the board[8][8] in accordance to the game actions. 
+    selected = board[selectY][selectX]; // Will change the board[BOARD_SIZE][BOARD_SIZE] in accordance to the game actions. 
     board[moveY][moveX] = board[selectY][selectX];
     board[selectY][selectX] = ' ';
 
@@ -391,8 +375,8 @@ bool moveAction(int selectY,      int  selectX,
     // Find the kings position. 
     if (playerTurn == true) king = 'W';
     else king = 'w';
-    for (int i = 0; i < 8; i++)
-        for (int n = 0; n < 8; n++)
+    for (int i = 0; i < BOARD_SIZE; i++)
+        for (int n = 0; n < BOARD_SIZE; n++)
             if (board[i][n] == king) {
                 kingX = n;
                 kingY = i;
@@ -401,8 +385,8 @@ bool moveAction(int selectY,      int  selectX,
     // If the king is under threat. 
     if (playerTurn == true) opponent = false;
     else opponent = true;
-    for (int i = 0; i < 8; i++) {
-        for (int n = 0; n < 8; n++)
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int n = 0; n < BOARD_SIZE; n++)
             if (board[i][n] != ' ') {
                 check = lookForMove(board, i, n, kingY, kingX, board[i][n], opponent, king);
                 if (check == true) break;
@@ -816,7 +800,7 @@ bool kingRules(int selectY, int selectX,
     return false;
 }
 
-bool is_check(char board[8][8], bool playerTurn) {
+bool is_check(char board[BOARD_SIZE][BOARD_SIZE], bool playerTurn) {
     
     // x and y position for the king, any possible threat and available disruptors.
     int kingX = UNDEF, kingY = UNDEF; 
@@ -830,8 +814,8 @@ bool is_check(char board[8][8], bool playerTurn) {
     bool opponent = false; 
     bool removeThreat = false;
     
-    bool threat[8] = { false, false, false, false, false, false, false, false };
-    bool is_Safe[8] = { true, true, true, true, true, true, true, true };
+    bool threat[BOARD_SIZE] = { false, false, false, false, false, false, false, false };
+    bool is_Safe[BOARD_SIZE] = { true, true, true, true, true, true, true, true };
 
     // Store piece type depending on player turn. 
     if (playerTurn == true) {
@@ -852,8 +836,8 @@ bool is_check(char board[8][8], bool playerTurn) {
     }
 
     // Find the kings position. 
-    for (int i = 0; i < 8; i++)
-        for (int n = 0; n < 8; n++)
+    for (int i = 0; i < BOARD_SIZE; i++)
+        for (int n = 0; n < BOARD_SIZE; n++)
             if (board[i][n] == king) {
                 kingX = n; // x.
                 kingY = i; // y.
@@ -862,8 +846,8 @@ bool is_check(char board[8][8], bool playerTurn) {
     // Check if a piece threaten the king. 
     if (playerTurn == true) opponent = false;
     else opponent = true;
-    for (int i = 0; i < 8; i++) {
-        for (int n = 0; n < 8; n++)
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int n = 0; n < BOARD_SIZE; n++)
             if (board[i][n] != ' ') {
                 checkmate = lookForMove(board, i, n, kingY, kingX, 
                                         board[i][n], opponent, king);
@@ -877,8 +861,8 @@ bool is_check(char board[8][8], bool playerTurn) {
     }
 
     // Scan for any piece that might be able to remove the threat. 
-    for (int i = 0; i < 8; i++) {
-        for (int n = 0; n < 8; n++)
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int n = 0; n < BOARD_SIZE; n++)
             if (board[i][n] != ' ') {
                 removeThreat = lookForMove(board, i, n, threatY, threatX, 
                                            board[i][n], playerTurn, board[threatY][threatX]);
@@ -897,8 +881,8 @@ bool is_check(char board[8][8], bool playerTurn) {
     // Temporarely remove the king as to enable a full scan of its perimeter.
     board[kingY][kingX] = ' '; // Removed king. 
     if (checkmate == true) {
-        for (int i = 0; i < 8; i++)
-            for (int n = 0; n < 8; n++)
+        for (int i = 0; i < BOARD_SIZE; i++)
+            for (int n = 0; n < BOARD_SIZE; n++)
                 if (board[i][n] != ' ') {
                     threat[0] = lookForMove(board, i, n, kingY - 1, kingX + 1, 
                                             board[i][n], opponent, king);
@@ -916,7 +900,7 @@ bool is_check(char board[8][8], bool playerTurn) {
                                             board[i][n], opponent, king);
                     threat[7] = lookForMove(board, i, n, kingY - 1, kingX, 
                                             board[i][n], opponent, king);
-                    for (int y = 0; y < 8; y++)
+                    for (int y = 0; y < BOARD_SIZE; y++)
                         if (threat[y] == true) is_Safe[y] = false;
                 }
     }
@@ -945,7 +929,7 @@ bool is_check(char board[8][8], bool playerTurn) {
     return checkmate;
 }
 
-bool lookForMove(char board[8][8], 
+bool lookForMove(char board[BOARD_SIZE][BOARD_SIZE], 
                  int selectY, int selectX, 
                  int moveY,   int moveX, 
                  char piece,  bool playerTurn, 
@@ -978,7 +962,7 @@ bool lookForMove(char board[8][8],
         return false;
 }
 
-void castling(bool playerTurn,       char board[8][8], 
+void castling(bool playerTurn,       char board[BOARD_SIZE][BOARD_SIZE], 
               bool* ptr_shortCastp1, bool* ptr_longCastp1, 
               bool* ptr_shortCastp2, bool* ptr_longCastp2) {
     
@@ -1016,12 +1000,12 @@ void castling(bool playerTurn,       char board[8][8],
     return;
 }
 
-void castlingAction(char board[8][8],      bool* ptr_playerTurn, 
-                    bool* ptr_shortCastp1, bool* ptr_longCastp1, 
-                    bool* ptr_shortCastp2, bool* ptr_longCastp2, 
-                    int selectX,           int selectY, 
-                    int moveX,             int moveY, 
-                    bool checkStatus) {
+void castlingAction(char board[BOARD_SIZE][BOARD_SIZE], bool* ptr_playerTurn, 
+                    bool* ptr_shortCastp1,              bool* ptr_longCastp1, 
+                    bool* ptr_shortCastp2,              bool* ptr_longCastp2, 
+                    int selectX,                        int selectY, 
+                    int moveX,                          int moveY, 
+                                                        bool checkStatus) {
    
     // P1 white.
     bool check = false;
@@ -1037,8 +1021,8 @@ void castlingAction(char board[8][8],      bool* ptr_playerTurn,
     if (*ptr_playerTurn == true) { // P1 white.
         if (board[selectY][selectX] == 'W' && board[moveY][moveX] == 'R') { // Picked piece is king and move target is rook.
             if (*ptr_shortCastp1 == true && moveY == 0 && moveX == 7) {
-                for (int i = 0; i < 8; i++) {
-                    for (int n = 0; n < 8; n++)
+                for (int i = 0; i < BOARD_SIZE; i++) {
+                    for (int n = 0; n < BOARD_SIZE; n++)
                         if (lookForMove(board, i, n, 0, 6, board[i][n], opponent, 'W') == true) {
                             check = true; // If rockade results in check. 
                             break;
@@ -1059,8 +1043,8 @@ void castlingAction(char board[8][8],      bool* ptr_playerTurn,
                 }
             }
             if (*ptr_longCastp1 == true && moveY == 0 && moveX == 0) {
-                for (int i = 0; i < 8; i++) {
-                    for (int n = 0; n < 8; n++)
+                for (int i = 0; i < BOARD_SIZE; i++) {
+                    for (int n = 0; n < BOARD_SIZE; n++)
                         if (lookForMove(board, i, n, 0, 2, board[i][n], opponent, 'W') == true) {
                             check = true; // If rockade results in check. 
                             break;
@@ -1085,8 +1069,8 @@ void castlingAction(char board[8][8],      bool* ptr_playerTurn,
     else { // P2 black.
         if (board[selectY][selectX] == 'w' && board[moveY][moveX] == 'r') { // Picked piece is king and move target is rook.
             if (*ptr_shortCastp2 == true && moveY == 7 && moveX == 7) {
-                for (int i = 0; i < 8; i++) {
-                    for (int n = 0; n < 8; n++) 
+                for (int i = 0; i < BOARD_SIZE; i++) {
+                    for (int n = 0; n < BOARD_SIZE; n++) 
                         if (lookForMove(board, i, n, 7, 6, board[i][n], opponent, 'w') == true) {
                             check = true; // If rockade results in check. 
                             break;
@@ -1106,8 +1090,8 @@ void castlingAction(char board[8][8],      bool* ptr_playerTurn,
                 }
             }
             if (*ptr_longCastp2 == true && moveY == 7 && moveX == 0) {
-                for (int i = 0; i < 8; i++)
-                    for (int n = 0; n < 8; n++) {
+                for (int i = 0; i < BOARD_SIZE; i++)
+                    for (int n = 0; n < BOARD_SIZE; n++) {
                         if (lookForMove(board, i, n, 7, 2, board[i][n], opponent, 'w') == true) {
                             check = true; // If rockade results in check. 
                             break;
@@ -1132,6 +1116,34 @@ void castlingAction(char board[8][8],      bool* ptr_playerTurn,
     return;
 }
 
+void createSquares(SDL_Rect rect_board[BOARD_SIZE * BOARD_SIZE],
+                   const int width, const int height) {
+
+    int rowSize = 0;                   // Current row. 
+    int startX = 110, startY = 50;     // Start points of drawing. 
+    const int resetX = 110;            // Reset x posistion of squares. 
+
+    for (int i = 0; i < 64; i++) { // Num of squares.
+        rowSize++;                 // Num of rows. 
+
+        // Size of the squares. 
+        rect_board[i].x = startX;        
+        rect_board[i].y = startY;
+        rect_board[i].w = width;
+        rect_board[i].h = height;
+
+        startX += width; // X starting point of the next square
+
+        if (rowSize == BOARD_SIZE) {   // End of a row. 
+            rowSize = 0;      // Reset row size. 
+            startY += height; // Y starting point of the next square
+            startX = resetX;  // Rest the X starting point.
+        }
+    }
+
+    return; 
+}
+
 void drawBackground(SDL_Renderer* rend_Board) {
     
     // This is just the black background.
@@ -1141,10 +1153,9 @@ void drawBackground(SDL_Renderer* rend_Board) {
 	return; 
 }
 
-void drawBoard(SDL_Renderer* rend_Board, SDL_Rect rect_Board[64], 
-               char board[8][8],         int clicked, 
-               int hoovering,            bool can_move, 
-               int aiSel,                int aiMove) {
+void drawBoard(SDL_Renderer* rend_Board,            SDL_Rect rect_Board[64], 
+               char board[BOARD_SIZE][BOARD_SIZE],  int clicked, 
+               int hoovering,                       bool can_move) {
     
     // Status determines color of the squares. True = white, false = black.
 	bool gridColor = false;
@@ -1275,7 +1286,7 @@ void drawBoard(SDL_Renderer* rend_Board, SDL_Rect rect_Board[64],
 		// Iterate the numbers used to control the status of the chess board.
 		// k = x and n = y. 
 		n++;
-		if (n == 8) {
+		if (n == BOARD_SIZE) {
 			n = 0;
 			k++; 
 		}
@@ -1399,7 +1410,7 @@ void drawKing(SDL_Renderer* rend_Board, int startX, int startY) {
     
     // Width and lenght of the piece. 
 	int length = 20;
-	int width = 8;
+	int width = BOARD_SIZE;
 	int headStart = startY + 5;
 
 	// Head.
